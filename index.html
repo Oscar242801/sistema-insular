@@ -5,24 +5,53 @@
     <meta charset="UTF-8">
     <title>Sistema Documental Insular</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
-        header { background-color: #003366; color: white; padding: 10px 20px; display: flex; align-items: center; }
-        header img { height: 50px; margin-right: 20px; }
-        h1 { font-size: 1.5rem; }
-        main { padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        select, input[type="file"], input[type="text"], input[type="date"] {
-            padding: 8px; width: 100%; max-width: 400px; margin-top: 5px;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        header {
+            background-color: #002B7F;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+        }
+        header img {
+            height: 50px;
+            margin-right: 20px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .container {
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        select, input[type="file"] {
+            margin: 10px 0;
+            padding: 5px;
         }
         button {
-            background-color: #ffcc00; border: none; padding: 10px 20px;
-            font-weight: bold; cursor: pointer; margin-top: 10px;
+            background-color: #ffcc00;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
         }
-        .status { margin-top: 10px; color: green; }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; background-color: white; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background-color: #003366; color: white; }
-        .filters { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 30px; }
     </style>
 </head>
 <body>
@@ -30,134 +59,45 @@
         <img src="logo_gobierno_insular_web.png" alt="Logo">
         <h1>Sistema Documental Insular</h1>
     </header>
-    <main>
+    <div class="container">
         <h2>Subir nuevo documento</h2>
-        <div class="form-group">
-            <label for="category">Tipo de documento:</label>
-            <select id="category">
-                <option value="">Selecciona una categoría</option>
-                <option value="Plano">📐 Plano</option>
-                <option value="Memorando">📄 Memorando</option>
-                <option value="Acta">📝 Acta</option>
-                <option value="Normativa">📘 Normativa</option>
-                <option value="Otro">📁 Otro</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="fileInput">Seleccionar archivo (.docx, .jpg, .png):</label>
-            <input type="file" id="fileInput">
-        </div>
-        <button onclick="upload()">Convertir, enviar y guardar</button>
-        <div id="status" class="status"></div>
+        <label for="categoria">Tipo de documento:</label>
+        <select id="categoria">
+            <option>Selecciona una categoría</option>
+            <option>📐 Plano</option>
+            <option>📝 Memorando</option>
+            <option>📄 Acta</option>
+            <option>📚 Normativa</option>
+            <option>📁 Otro</option>
+            <option>📊 Excel</option>
+        </select><br>
+        <input type="file" id="archivo"><br>
+        <button>Subir y enviar</button>
 
-        <div class="filters">
-            <div>
-                <label>Filtrar por nombre:</label>
-                <input type="text" id="nameFilter" oninput="applyFilters()">
-            </div>
-            <div>
-                <label>Filtrar por tipo:</label>
-                <select id="typeFilter" onchange="applyFilters()">
-                    <option value="">Todos</option>
-                    <option value="Plano">📐 Plano</option>
-                    <option value="Memorando">📄 Memorando</option>
-                    <option value="Acta">📝 Acta</option>
-                    <option value="Normativa">📘 Normativa</option>
-                    <option value="Otro">📁 Otro</option>
-                </select>
-            </div>
-            <div>
-                <label>Filtrar por fecha:</label>
-                <input type="date" id="dateFilter" onchange="applyFilters()">
-            </div>
-        </div>
-
-        <table id="documentTable" style="display:none;">
+        <table>
             <thead>
                 <tr>
                     <th>Tipo</th>
                     <th>Nombre</th>
                     <th>Fecha</th>
                     <th>Estado</th>
-                    <th>Descargar</th>
                 </tr>
             </thead>
-            <tbody id="documentBody"></tbody>
+            <tbody>
+                <tr>
+                    <td>📐 Plano</td>
+                    <td>red_hidraulica.docx</td>
+                    <td>03/08/2025</td>
+                    <td>✅ Enviado</td>
+                </tr>
+                <tr>
+                    <td>📝 Memorando</td>
+                    <td>normas_puerto.jpg</td>
+                    <td>03/08/2025</td>
+                    <td>✅ Enviado</td>
+                </tr>
+            </tbody>
         </table>
-    </main>
-
-    <script>
-        let rows = [];
-
-        function upload() {
-            const fileInput = document.getElementById('fileInput');
-            const category = document.getElementById('category').value;
-            const file = fileInput.files[0];
-            const status = document.getElementById('status');
-            const table = document.getElementById('documentTable');
-            const tbody = document.getElementById('documentBody');
-
-            if (!category || !file) {
-                status.style.color = 'red';
-                status.innerText = 'Selecciona una categoría y un archivo.';
-                return;
-            }
-
-            const today = new Date().toISOString().split('T')[0];
-            const icon = {
-                'Plano': '📐',
-                'Memorando': '📄',
-                'Acta': '📝',
-                'Normativa': '📘',
-                'Otro': '📁'
-            }[category] || '';
-
-            const row = {
-                tipo: icon + " " + category,
-                nombre: file.name,
-                fecha: today,
-                estado: "✅ Enviado",
-                descarga: "⬇️"
-            };
-
-            rows.push(row);
-            updateTable();
-            status.style.color = 'green';
-            status.innerText = 'Documento enviado con éxito a Telegram.';
-        }
-
-        function updateTable() {
-            const tbody = document.getElementById('documentBody');
-            tbody.innerHTML = '';
-            const table = document.getElementById('documentTable');
-            if (rows.length > 0) table.style.display = 'table';
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.tipo}</td>
-                    <td>${row.nombre}</td>
-                    <td>${row.fecha}</td>
-                    <td>${row.estado}</td>
-                    <td><a href="#">${row.descarga}</a></td>
-                `;
-                tbody.appendChild(tr);
-            });
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const name = document.getElementById('nameFilter').value.toLowerCase();
-            const type = document.getElementById('typeFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            const tbody = document.getElementById('documentBody');
-            Array.from(tbody.children).forEach(tr => {
-                const [tipo, nombre, fecha] = Array.from(tr.children).map(td => td.textContent.toLowerCase());
-                const matchName = nombre.includes(name);
-                const matchType = !type || tipo.includes(type.toLowerCase());
-                const matchDate = !date || fecha.includes(date);
-                tr.style.display = matchName && matchType && matchDate ? "" : "none";
-            });
-        }
-    </script>
+    </div>
 </body>
 </html>
