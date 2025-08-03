@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,9 +7,9 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #ffffff;
             margin: 0;
             padding: 0;
+            background-color: #f4f4f4;
             color: #333;
         }
         header {
@@ -23,74 +24,123 @@
             margin-right: 20px;
         }
         h1 {
-            font-size: 1.5em;
+            font-size: 1.5rem;
         }
         main {
             padding: 20px;
         }
-        .upload-section {
-            margin-bottom: 20px;
+        .form-group {
+            margin-bottom: 15px;
         }
-        .upload-section input[type="file"] {
-            margin: 10px 0;
-        }
-        .preview {
-            margin-top: 30px;
-        }
-        iframe {
+        select, input[type="file"] {
+            padding: 8px;
             width: 100%;
-            height: 600px;
-            border: 1px solid #ccc;
-        }
-        .success {
-            color: green;
-            margin-top: 10px;
+            max-width: 400px;
         }
         button {
-            background-color: #FFC107;
+            background-color: #ffcc00;
             border: none;
             padding: 10px 20px;
             font-weight: bold;
             cursor: pointer;
         }
+        .status {
+            margin-top: 10px;
+            color: green;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+        }
+        .icon {
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
     <header>
-        <img src="logo_gobierno_insular_web.png" alt="Logo Gobierno">
+        <img src="logo_gobierno_insular_web.png" alt="Logo">
         <h1>Sistema Documental Insular</h1>
     </header>
     <main>
-        <h2>Subir documento (Word o imagen)</h2>
-        <div class="upload-section">
-            <label for="fileInput">Seleccionar archivo (.docx, .jpg, .png):</label><br>
-            <input type="file" id="fileInput" accept=".docx, .jpg, .jpeg, .png"><br>
-            <button onclick="convertAndSend()">Convertir y enviar</button>
-            <div id="status" class="success"></div>
+        <h2>Subir nuevo documento</h2>
+        <div class="form-group">
+            <label for="category">Tipo de documento:</label>
+            <select id="category">
+                <option value="">Selecciona una categoría</option>
+                <option value="Plano">📐 Plano</option>
+                <option value="Memorando">📄 Memorando</option>
+                <option value="Acta">📝 Acta</option>
+                <option value="Normativa">📘 Normativa</option>
+                <option value="Otro">📁 Otro</option>
+            </select>
         </div>
-        <div class="preview" id="previewContainer" style="display:none;">
-            <h3>Vista previa del PDF generado</h3>
-            <iframe id="pdfFrame" src=""></iframe>
+        <div class="form-group">
+            <label for="fileInput">Seleccionar archivo (.docx, .jpg, .png, .pdf):</label>
+            <input type="file" id="fileInput">
         </div>
+        <button onclick="upload()">Subir y enviar</button>
+        <div id="status" class="status"></div>
+        <table id="documentTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Descargar</th>
+                </tr>
+            </thead>
+            <tbody id="documentBody"></tbody>
+        </table>
     </main>
-
     <script>
-        async function convertAndSend() {
+        function upload() {
             const fileInput = document.getElementById('fileInput');
-            const status = document.getElementById('status');
-            const previewContainer = document.getElementById('previewContainer');
-            const pdfFrame = document.getElementById('pdfFrame');
-
+            const category = document.getElementById('category').value;
             const file = fileInput.files[0];
-            if (!file) {
-                status.textContent = "Por favor selecciona un archivo.";
+            const status = document.getElementById('status');
+            const table = document.getElementById('documentTable');
+            const tbody = document.getElementById('documentBody');
+
+            if (!category || !file) {
+                status.style.color = 'red';
+                status.innerText = 'Selecciona una categoría y un archivo.';
                 return;
             }
 
-            // Simulación temporal
-            status.textContent = "Documento enviado con éxito.";
-            pdfFrame.src = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-            previewContainer.style.display = "block";
+            const today = new Date().toLocaleDateString('es-VE');
+            const icon = {
+                'Plano': '📐',
+                'Memorando': '📄',
+                'Acta': '📝',
+                'Normativa': '📘',
+                'Otro': '📁'
+            }[category] || '';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${icon} ${category}</td>
+                <td>${file.name}</td>
+                <td>${today}</td>
+                <td>✅ Enviado</td>
+                <td><a href="#" onclick="alert('Descarga simulada')">⬇️</a></td>
+            `;
+            tbody.appendChild(row);
+            table.style.display = 'table';
+            status.style.color = 'green';
+            status.innerText = 'Documento enviado con éxito.';
         }
     </script>
 </body>
