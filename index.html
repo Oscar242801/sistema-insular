@@ -1,52 +1,65 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Documental Insular</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    h2 { color: #003366; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #003366; color: white; }
+    select, input[type=file], button { margin: 10px 0; padding: 8px; }
+    .status { color: green; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <h1>Sistema Documental Insular</h1>
+  <h2>Sistema Documental Insular</h2>
   <form id="uploadForm">
-    <label>Tipo de documento:</label>
-    <select id="categoria">
+    <label for="tipo">Tipo de documento:</label>
+    <select id="tipo" required>
       <option value="">Selecciona una categoría</option>
-      <option value="Plano">📐 Plano</option>
-      <option value="Memorando">📄 Memorando</option>
-      <option value="Acta">📝 Acta</option>
-      <option value="Normativa">📘 Normativa</option>
-      <option value="Excel">📊 Excel</option>
-      <option value="Otro">📁 Otro</option>
-    </select><br><br>
-    <input type="file" id="fileInput" /><br><br>
+      <option value="📄 Plano">📄 Plano</option>
+      <option value="📑 Memorando">📑 Memorando</option>
+      <option value="📝 Acta">📝 Acta</option>
+      <option value="📘 Normativa">📘 Normativa</option>
+      <option value="📂 Otro">📂 Otro</option>
+      <option value="📊 Excel">📊 Excel</option>
+    </select><br />
+    <input type="file" id="fileInput" accept=".docx,.jpg,.png,.xlsx,.xls" required /><br />
     <button type="submit">Subir y enviar</button>
+    <p id="status" class="status"></p>
   </form>
+
+  <table id="documentTable">
+    <thead>
+      <tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Estado</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
   <script>
-    document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const categoria = document.getElementById("categoria").value;
-      const fileInput = document.getElementById("fileInput");
-      if (!categoria || fileInput.files.length === 0) {
-        alert("Selecciona categoría y archivo.");
+      const tipo = document.getElementById('tipo').value;
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      const status = document.getElementById('status');
+
+      if (!tipo || !file) {
+        status.textContent = "Debe seleccionar una categoría y un archivo.";
         return;
       }
 
-      const file = fileInput.files[0];
-      const formData = new FormData();
-      formData.append("document", file);
-      formData.append("categoria", categoria);
+      const fecha = new Date().toLocaleDateString("es-VE");
+      const row = `<tr><td>${tipo}</td><td>${file.name}</td><td>${fecha}</td><td>✅ Enviado</td></tr>`;
+      document.querySelector("#documentTable tbody").innerHTML += row;
+      status.textContent = "Documento enviado con éxito.";
 
-      const response = await fetch("https://tu-backend.com/api/upload", {
-        method: "POST",
-        body: formData
-      });
-
-      if (response.ok) {
-        alert("Documento enviado a Telegram.");
-      } else {
-        alert("Error al enviar.");
-      }
+      // Simulación de envío a Telegram (en código real se usaría fetch con token del bot y chat_id)
+      console.log("Simulado: Enviado a Telegram:", file.name);
     });
   </script>
 </body>
