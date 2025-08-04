@@ -3,64 +3,144 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Documental Insular</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
-    h2 { color: #003366; }
-    table { border-collapse: collapse; width: 100%; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    header { display: flex; align-items: center; background-color: #003366; padding: 10px; color: white; }
+    header img { height: 50px; margin-right: 20px; }
+    h1 { font-size: 24px; }
+    .form-group, .filters { margin-top: 20px; }
+    label { display: block; margin-bottom: 5px; }
+    select, input[type="file"], input[type="text"], input[type="date"] {
+      padding: 8px; width: 100%; max-width: 400px;
+    }
+    button { margin-top: 10px; padding: 10px 20px; background: #007BFF; color: white; border: none; cursor: pointer; }
+    table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
     th { background-color: #003366; color: white; }
-    select, input[type=file], button { margin: 10px 0; padding: 8px; }
-    .status { color: green; font-weight: bold; }
+    .status { margin-top: 10px; color: green; }
   </style>
 </head>
 <body>
-  <h2>Sistema Documental Insular</h2>
-  <form id="uploadForm">
-    <label for="tipo">Tipo de documento:</label>
-    <select id="tipo" required>
-      <option value="">Selecciona una categoría</option>
-      <option value="📄 Plano">📄 Plano</option>
-      <option value="📑 Memorando">📑 Memorando</option>
-      <option value="📝 Acta">📝 Acta</option>
-      <option value="📘 Normativa">📘 Normativa</option>
-      <option value="📂 Otro">📂 Otro</option>
-      <option value="📊 Excel">📊 Excel</option>
-    </select><br />
-    <input type="file" id="fileInput" accept=".docx,.jpg,.png,.xlsx,.xls" required /><br />
-    <button type="submit">Subir y enviar</button>
-    <p id="status" class="status"></p>
-  </form>
+  <header>
+    <img src="logo_gobierno_insular_web.png" alt="Logo" />
+    <h1>Sistema Documental Insular</h1>
+  </header>
+  <main>
+    <div class="form-group">
+      <label for="category">Tipo de documento:</label>
+      <select id="category">
+        <option value="">Selecciona una categoría</option>
+        <option value="Plano">📐 Plano</option>
+        <option value="Memorando">📄 Memorando</option>
+        <option value="Acta">📝 Acta</option>
+        <option value="Normativa">📘 Normativa</option>
+        <option value="Excel">📊 Excel</option>
+        <option value="Otro">📁 Otro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="fileInput">Seleccionar archivo:</label>
+      <input type="file" id="fileInput" />
+    </div>
+    <button onclick="upload()">Subir y enviar</button>
+    <div id="status" class="status"></div>
 
-  <table id="documentTable">
-    <thead>
-      <tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Estado</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <div class="filters">
+      <label>Buscar por nombre:</label>
+      <input type="text" id="nameFilter" oninput="applyFilters()" />
+      <label>Filtrar por tipo:</label>
+      <select id="typeFilter" onchange="applyFilters()">
+        <option value="">Todos</option>
+        <option value="Plano">📐 Plano</option>
+        <option value="Memorando">📄 Memorando</option>
+        <option value="Acta">📝 Acta</option>
+        <option value="Normativa">📘 Normativa</option>
+        <option value="Excel">📊 Excel</option>
+        <option value="Otro">📁 Otro</option>
+      </select>
+      <label>Filtrar por fecha:</label>
+      <input type="date" id="dateFilter" onchange="applyFilters()" />
+    </div>
+
+    <table id="documentTable">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Descargar</th>
+        </tr>
+      </thead>
+      <tbody id="documentBody"></tbody>
+    </table>
+  </main>
 
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const tipo = document.getElementById('tipo').value;
-      const fileInput = document.getElementById('fileInput');
-      const file = fileInput.files[0];
-      const status = document.getElementById('status');
+    let registros = [];
 
-      if (!tipo || !file) {
-        status.textContent = "Debe seleccionar una categoría y un archivo.";
+    function upload() {
+      const categoria = document.getElementById("category").value;
+      const archivo = document.getElementById("fileInput").files[0];
+      const estado = document.getElementById("status");
+      if (!categoria || !archivo) {
+        estado.innerText = "Falta seleccionar categoría o archivo.";
+        estado.style.color = "red";
         return;
       }
 
-      const fecha = new Date().toLocaleDateString("es-VE");
-      const row = `<tr><td>${tipo}</td><td>${file.name}</td><td>${fecha}</td><td>✅ Enviado</td></tr>`;
-      document.querySelector("#documentTable tbody").innerHTML += row;
-      status.textContent = "Documento enviado con éxito.";
+      const fecha = new Date().toISOString().split("T")[0];
+      const icono = {
+        Plano: "📐",
+        Memorando: "📄",
+        Acta: "📝",
+        Normativa: "📘",
+        Excel: "📊",
+        Otro: "📁"
+      }[categoria] || "";
 
-      // Simulación de envío a Telegram (en código real se usaría fetch con token del bot y chat_id)
-      console.log("Simulado: Enviado a Telegram:", file.name);
-    });
+      registros.push({
+        tipo: `${icono} ${categoria}`,
+        nombre: archivo.name,
+        fecha: fecha,
+        estado: "✅ Enviado",
+        descarga: "⬇️"
+      });
+
+      actualizarTabla();
+      estado.innerText = "Documento enviado correctamente.";
+      estado.style.color = "green";
+    }
+
+    function actualizarTabla() {
+      const cuerpo = document.getElementById("documentBody");
+      cuerpo.innerHTML = "";
+      registros.forEach(reg => {
+        const fila = `<tr>
+          <td>${reg.tipo}</td>
+          <td>${reg.nombre}</td>
+          <td>${reg.fecha}</td>
+          <td>${reg.estado}</td>
+          <td><a href="#">${reg.descarga}</a></td>
+        </tr>`;
+        cuerpo.innerHTML += fila;
+      });
+    }
+
+    function applyFilters() {
+      const name = document.getElementById("nameFilter").value.toLowerCase();
+      const type = document.getElementById("typeFilter").value.toLowerCase();
+      const date = document.getElementById("dateFilter").value;
+
+      Array.from(document.querySelectorAll("#documentBody tr")).forEach(row => {
+        const [tipo, nombre, fecha] = Array.from(row.children).map(td => td.textContent.toLowerCase());
+        const matchName = nombre.includes(name);
+        const matchType = !type || tipo.includes(type);
+        const matchDate = !date || fecha.includes(date);
+        row.style.display = matchName && matchType && matchDate ? "" : "none";
+      });
+    }
   </script>
 </body>
 </html>
