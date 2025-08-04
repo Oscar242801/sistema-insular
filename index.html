@@ -7,31 +7,41 @@
   <title>Sistema Documental Insular</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0 15px;
-      background: url('fondo_institucional.jpg') no-repeat center center fixed;
+      font-family: sans-serif;
+      background: url('fondo.jpg') no-repeat center center fixed;
       background-size: cover;
     }
     header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background-color: rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.9);
       padding: 10px;
     }
-    header img { height: 50px; }
-    h2 { color: #003366; margin: 0; }
+    header img {
+      height: 50px;
+      margin-right: 10px;
+    }
+    h2 {
+      margin: 0;
+      color: #003366;
+    }
     main {
-      background-color: rgba(255,255,255,0.95);
-      padding: 15px;
-      margin-top: 10px;
+      background: rgba(255,255,255,0.95);
+      margin: 20px;
+      padding: 20px;
       border-radius: 10px;
     }
-    table {
-      border-collapse: collapse;
+    input, select, button {
+      margin: 5px 0;
+      padding: 10px;
       width: 100%;
-      background: white;
+      max-width: 400px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
     th, td {
       border: 1px solid #ccc;
@@ -39,36 +49,22 @@
       text-align: left;
     }
     th {
-      background-color: #003366;
+      background: #003366;
       color: white;
-    }
-    select, input[type="file"], input[type="text"], button {
-      margin: 10px 5px;
-      padding: 8px;
-      max-width: 100%;
     }
     .status {
       margin-top: 10px;
       color: green;
-      font-weight: bold;
-    }
-    @media (max-width: 768px) {
-      header { flex-direction: column; align-items: flex-start; }
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      tr { margin-bottom: 15px; }
-      th { background-color: transparent; color: black; font-weight: bold; }
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="logo_gobierno_insular_web.png" alt="Logo" />
+    <img src="logo.png" alt="Logo">
     <h2>Sistema Documental Insular</h2>
   </header>
   <main>
-    <form id="uploadForm">
+    <form id="form">
       <label for="tipo">Tipo de documento:</label>
       <select id="tipo" required>
         <option value="">Selecciona una categoría</option>
@@ -79,9 +75,9 @@
         <option value="📂 Otro">📂 Otro</option>
         <option value="📊 Excel">📊 Excel</option>
       </select>
-      <input type="file" id="fileInput" required />
-      <button type="submit">Subir y enviar</button>
-      <p id="status" class="status"></p>
+      <input type="file" id="file" required />
+      <button type="submit">Subir documento</button>
+      <div class="status" id="status"></div>
     </form>
 
     <input type="text" id="search" placeholder="Buscar por nombre..." />
@@ -95,73 +91,76 @@
       <option value="📊 Excel">📊 Excel</option>
     </select>
 
-    <table id="documentTable">
+    <table>
       <thead>
-        <tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Descargar</th></tr>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>Fecha</th>
+          <th>Descargar</th>
+        </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="tabla"></tbody>
     </table>
   </main>
+
   <script>
-    const tabla = document.querySelector("#documentTable tbody");
-    const status = document.getElementById("status");
+    const token = "8085382733:AAEuEHAfeqkiu_teu9TmH8CFF5TiYrKUDyQ";
     const chatId = "-1002773184301";
-    const botToken = "8085382733:AAEuEHAfeqkiu_teu9TmH8CFF5TiYrKUDyQ";
+    const tabla = document.getElementById("tabla");
+    const status = document.getElementById("status");
+    let datos = JSON.parse(localStorage.getItem("documentos") || "[]");
 
-    let historial = JSON.parse(localStorage.getItem("documentos")) || [];
-
-    function renderTabla() {
-      tabla.innerHTML = "";
+    function render() {
+      const filtro = document.getElementById("filterTipo").value;
       const search = document.getElementById("search").value.toLowerCase();
-      const filterTipo = document.getElementById("filterTipo").value;
-      historial
-        .filter(doc => (!filterTipo || doc.tipo === filterTipo))
-        .filter(doc => doc.nombre.toLowerCase().includes(search))
-        .forEach(doc => {
-          const fila = `<tr>
-            <td>${doc.tipo}</td>
-            <td>${doc.nombre}</td>
-            <td>${doc.fecha}</td>
-            <td><a href="${doc.url}" download="${doc.nombre}">📥</a></td>
+      tabla.innerHTML = "";
+      datos
+        .filter(d => (!filtro || d.tipo === filtro))
+        .filter(d => d.nombre.toLowerCase().includes(search))
+        .forEach(d => {
+          tabla.innerHTML += `<tr>
+            <td>${d.tipo}</td>
+            <td>${d.nombre}</td>
+            <td>${d.fecha}</td>
+            <td><a href="${d.url}" download="${d.nombre}">📥</a></td>
           </tr>`;
-          tabla.innerHTML += fila;
         });
     }
 
-    document.getElementById("uploadForm").addEventListener("submit", async e => {
+    document.getElementById("form").addEventListener("submit", async e => {
       e.preventDefault();
       const tipo = document.getElementById("tipo").value;
-      const fileInput = document.getElementById("fileInput");
+      const fileInput = document.getElementById("file");
       const file = fileInput.files[0];
-      if (!tipo || !file) return;
+      if (!file || !tipo) return;
 
       const fecha = new Date().toLocaleDateString("es-VE");
-      const fileData = new FormData();
-      fileData.append("chat_id", chatId);
-      fileData.append("document", file);
-      fileData.append("caption", `${tipo}
-📁 ${file.name}
-🗓️ Fecha: ${fecha}`);
+      const formData = new FormData();
+      formData.append("chat_id", chatId);
+      formData.append("document", file);
+      formData.append("caption", `${tipo}\n📁 ${file.name}\n🗓️ Fecha: ${fecha}`);
 
-      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+      const r = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
         method: "POST",
-        body: fileData,
+        body: formData
       });
 
-      if (response.ok) {
-        const fakeURL = URL.createObjectURL(file);
-        historial.push({ tipo, nombre: file.name, fecha, url: fakeURL });
-        localStorage.setItem("documentos", JSON.stringify(historial));
-        renderTabla();
-        status.textContent = "✅ Documento enviado a Telegram correctamente.";
+      if (r.ok) {
+        const url = URL.createObjectURL(file);
+        datos.push({ tipo, nombre: file.name, fecha, url });
+        localStorage.setItem("documentos", JSON.stringify(datos));
+        render();
+        status.textContent = "✅ Documento enviado correctamente.";
+        fileInput.value = "";
       } else {
         status.textContent = "❌ Error al enviar a Telegram.";
       }
     });
 
-    document.getElementById("search").addEventListener("input", renderTabla);
-    document.getElementById("filterTipo").addEventListener("change", renderTabla);
-    renderTabla();
+    document.getElementById("search").addEventListener("input", render);
+    document.getElementById("filterTipo").addEventListener("change", render);
+    render();
   </script>
 </body>
 </html>
