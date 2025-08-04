@@ -1,54 +1,53 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Sistema Documental Insular</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px; }
-        h1 { color: #003366; }
-        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .table th, .table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        .table th { background-color: #003366; color: white; }
-        select, input[type="file"] { margin-top: 10px; }
-        .success { color: green; margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Sistema Documental Insular</title>
 </head>
 <body>
-    <h1>Sistema Documental Insular</h1>
-    <label for="categoria">Tipo de documento:</label>
+  <h1>Sistema Documental Insular</h1>
+  <form id="uploadForm">
+    <label>Tipo de documento:</label>
     <select id="categoria">
-        <option value="">Selecciona una categoría</option>
-        <option value="Plano">📐 Plano</option>
-        <option value="Memorando">📄 Memorando</option>
-        <option value="Acta">📝 Acta</option>
-        <option value="Normativa">📘 Normativa</option>
-        <option value="Excel">📊 Excel</option>
-        <option value="Otro">📁 Otro</option>
-    </select>
-    <br><br>
-    <input type="file" accept=".docx,.jpg,.png" />
-    <button>Subir y enviar</button>
-    <p class="success">Documento enviado con éxito.</p>
-    <table class="table">
-        <tr>
-            <th>Tipo</th>
-            <th>Nombre</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-        </tr>
-        <tr>
-            <td>📐 Plano</td>
-            <td>red_hidraulica.docx</td>
-            <td>03/08/2025</td>
-            <td>✅ Enviado</td>
-        </tr>
-        <tr>
-            <td>📄 Memorando</td>
-            <td>normas_puerto.jpg</td>
-            <td>03/08/2025</td>
-            <td>✅ Enviado</td>
-        </tr>
-    </table>
+      <option value="">Selecciona una categoría</option>
+      <option value="Plano">📐 Plano</option>
+      <option value="Memorando">📄 Memorando</option>
+      <option value="Acta">📝 Acta</option>
+      <option value="Normativa">📘 Normativa</option>
+      <option value="Excel">📊 Excel</option>
+      <option value="Otro">📁 Otro</option>
+    </select><br><br>
+    <input type="file" id="fileInput" /><br><br>
+    <button type="submit">Subir y enviar</button>
+  </form>
+  <script>
+    document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const categoria = document.getElementById("categoria").value;
+      const fileInput = document.getElementById("fileInput");
+      if (!categoria || fileInput.files.length === 0) {
+        alert("Selecciona categoría y archivo.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("document", file);
+      formData.append("categoria", categoria);
+
+      const response = await fetch("https://tu-backend.com/api/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      if (response.ok) {
+        alert("Documento enviado a Telegram.");
+      } else {
+        alert("Error al enviar.");
+      }
+    });
+  </script>
 </body>
 </html>
