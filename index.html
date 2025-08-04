@@ -3,144 +3,105 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Documental Insular</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
-    header { display: flex; align-items: center; background-color: #003366; padding: 10px; color: white; }
-    header img { height: 50px; margin-right: 20px; }
-    h1 { font-size: 24px; }
-    .form-group, .filters { margin-top: 20px; }
-    label { display: block; margin-bottom: 5px; }
-    select, input[type="file"], input[type="text"], input[type="date"] {
-      padding: 8px; width: 100%; max-width: 400px;
-    }
-    button { margin-top: 10px; padding: 10px 20px; background: #007BFF; color: white; border: none; cursor: pointer; }
-    table { width: 100%; margin-top: 30px; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    header { display: flex; align-items: center; gap: 10px; }
+    img { height: 50px; }
+    h2 { color: #003366; }
+    table { border-collapse: collapse; width: 100%; background: white; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #003366; color: white; }
-    .status { margin-top: 10px; color: green; }
+    select, input[type="file"], input[type="text"], button { margin: 10px 5px; padding: 8px; }
+    .status { margin-top: 10px; color: green; font-weight: bold; }
   </style>
 </head>
 <body>
   <header>
     <img src="logo_gobierno_insular_web.png" alt="Logo" />
-    <h1>Sistema Documental Insular</h1>
+    <h2>Sistema Documental Insular</h2>
   </header>
-  <main>
-    <div class="form-group">
-      <label for="category">Tipo de documento:</label>
-      <select id="category">
-        <option value="">Selecciona una categoría</option>
-        <option value="Plano">📐 Plano</option>
-        <option value="Memorando">📄 Memorando</option>
-        <option value="Acta">📝 Acta</option>
-        <option value="Normativa">📘 Normativa</option>
-        <option value="Excel">📊 Excel</option>
-        <option value="Otro">📁 Otro</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="fileInput">Seleccionar archivo:</label>
-      <input type="file" id="fileInput" />
-    </div>
-    <button onclick="upload()">Subir y enviar</button>
-    <div id="status" class="status"></div>
 
-    <div class="filters">
-      <label>Buscar por nombre:</label>
-      <input type="text" id="nameFilter" oninput="applyFilters()" />
-      <label>Filtrar por tipo:</label>
-      <select id="typeFilter" onchange="applyFilters()">
-        <option value="">Todos</option>
-        <option value="Plano">📐 Plano</option>
-        <option value="Memorando">📄 Memorando</option>
-        <option value="Acta">📝 Acta</option>
-        <option value="Normativa">📘 Normativa</option>
-        <option value="Excel">📊 Excel</option>
-        <option value="Otro">📁 Otro</option>
-      </select>
-      <label>Filtrar por fecha:</label>
-      <input type="date" id="dateFilter" onchange="applyFilters()" />
-    </div>
+  <form id="uploadForm">
+    <label for="tipo">Tipo de documento:</label>
+    <select id="tipo" required>
+      <option value="">Selecciona una categoría</option>
+      <option value="📄 Plano">📄 Plano</option>
+      <option value="📑 Memorando">📑 Memorando</option>
+      <option value="📝 Acta">📝 Acta</option>
+      <option value="📘 Normativa">📘 Normativa</option>
+      <option value="📂 Otro">📂 Otro</option>
+      <option value="📊 Excel">📊 Excel</option>
+    </select>
+    <input type="file" id="fileInput" required />
+    <button type="submit">Subir y enviar</button>
+    <p id="status" class="status"></p>
+  </form>
 
-    <table id="documentTable">
-      <thead>
-        <tr>
-          <th>Tipo</th>
-          <th>Nombre</th>
-          <th>Fecha</th>
-          <th>Estado</th>
-          <th>Descargar</th>
-        </tr>
-      </thead>
-      <tbody id="documentBody"></tbody>
-    </table>
-  </main>
+  <input type="text" id="search" placeholder="Buscar por nombre..." />
+  <select id="filterTipo">
+    <option value="">Filtrar por tipo</option>
+    <option value="📄 Plano">📄 Plano</option>
+    <option value="📑 Memorando">📑 Memorando</option>
+    <option value="📝 Acta">📝 Acta</option>
+    <option value="📘 Normativa">📘 Normativa</option>
+    <option value="📂 Otro">📂 Otro</option>
+    <option value="📊 Excel">📊 Excel</option>
+  </select>
+
+  <table id="documentTable">
+    <thead>
+      <tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th>Descargar</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script>
-    let registros = [];
+    const tabla = document.querySelector("#documentTable tbody");
+    const status = document.getElementById("status");
 
-    function upload() {
-      const categoria = document.getElementById("category").value;
-      const archivo = document.getElementById("fileInput").files[0];
-      const estado = document.getElementById("status");
-      if (!categoria || !archivo) {
-        estado.innerText = "Falta seleccionar categoría o archivo.";
-        estado.style.color = "red";
-        return;
-      }
+    let historial = JSON.parse(localStorage.getItem("documentos")) || [];
 
-      const fecha = new Date().toISOString().split("T")[0];
-      const icono = {
-        Plano: "📐",
-        Memorando: "📄",
-        Acta: "📝",
-        Normativa: "📘",
-        Excel: "📊",
-        Otro: "📁"
-      }[categoria] || "";
+    function renderTabla() {
+      tabla.innerHTML = "";
+      const search = document.getElementById("search").value.toLowerCase();
+      const filterTipo = document.getElementById("filterTipo").value;
 
-      registros.push({
-        tipo: `${icono} ${categoria}`,
-        nombre: archivo.name,
-        fecha: fecha,
-        estado: "✅ Enviado",
-        descarga: "⬇️"
-      });
-
-      actualizarTabla();
-      estado.innerText = "Documento enviado correctamente.";
-      estado.style.color = "green";
+      historial
+        .filter(doc => (!filterTipo || doc.tipo === filterTipo))
+        .filter(doc => doc.nombre.toLowerCase().includes(search))
+        .forEach(doc => {
+          const fila = `<tr>
+            <td>${doc.tipo}</td>
+            <td>${doc.nombre}</td>
+            <td>${doc.fecha}</td>
+            <td><a href="${doc.url}" download>📥</a></td>
+          </tr>`;
+          tabla.innerHTML += fila;
+        });
     }
 
-    function actualizarTabla() {
-      const cuerpo = document.getElementById("documentBody");
-      cuerpo.innerHTML = "";
-      registros.forEach(reg => {
-        const fila = `<tr>
-          <td>${reg.tipo}</td>
-          <td>${reg.nombre}</td>
-          <td>${reg.fecha}</td>
-          <td>${reg.estado}</td>
-          <td><a href="#">${reg.descarga}</a></td>
-        </tr>`;
-        cuerpo.innerHTML += fila;
-      });
-    }
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const tipo = document.getElementById("tipo").value;
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+      if (!tipo || !file) return;
 
-    function applyFilters() {
-      const name = document.getElementById("nameFilter").value.toLowerCase();
-      const type = document.getElementById("typeFilter").value.toLowerCase();
-      const date = document.getElementById("dateFilter").value;
+      const fecha = new Date().toLocaleDateString("es-VE");
+      const fakeURL = URL.createObjectURL(file);
+      historial.push({ tipo, nombre: file.name, fecha, url: fakeURL });
+      localStorage.setItem("documentos", JSON.stringify(historial));
+      renderTabla();
 
-      Array.from(document.querySelectorAll("#documentBody tr")).forEach(row => {
-        const [tipo, nombre, fecha] = Array.from(row.children).map(td => td.textContent.toLowerCase());
-        const matchName = nombre.includes(name);
-        const matchType = !type || tipo.includes(type);
-        const matchDate = !date || fecha.includes(date);
-        row.style.display = matchName && matchType && matchDate ? "" : "none";
-      });
-    }
+      status.textContent = "✅ Documento simulado como enviado a Telegram.";
+    });
+
+    document.getElementById("search").addEventListener("input", renderTabla);
+    document.getElementById("filterTipo").addEventListener("change", renderTabla);
+
+    renderTabla();
   </script>
 </body>
 </html>
